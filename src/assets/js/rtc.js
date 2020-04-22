@@ -16,6 +16,8 @@ var room;
 var username;
 var title = "ChatRoom";
 var localVideo;
+var audio;
+var isRecording = false;
 
 window.addEventListener('DOMContentLoaded', function () {
   room = h.getQString(location.href, "room") ? h.getQString(location.href, "room") : "";
@@ -248,6 +250,7 @@ function initRTC() {
 
             //save my stream
             myStream = stream;
+            h.addAudio(myStream);
 
             stream.getTracks().forEach(track => {
               pc[data.sender].addTrack(track, stream);
@@ -325,6 +328,24 @@ function initRTC() {
         });
       }
 
+    });
+
+    document.getElementById("record-toggle").addEventListener("click", e => {
+      e.preventDefault();
+
+      if (!isRecording) {
+        h.collectAudio();
+        h.recordAudio();
+        isRecording = true
+        e.srcElement.classList.add("text-danger");
+        e.srcElement.classList.remove("text-white");
+      } else {
+        h.stopRecordAudio()
+        isRecording = false
+        e.srcElement.classList.add("text-white");
+        e.srcElement.classList.remove("text-danger");
+      }
+      metaData.sentControlData({ audioRecord: isRecording });
     });
 
     document.getElementById("toggle-mute").addEventListener("click", e => {
@@ -462,6 +483,7 @@ function init(createOffer, partnerName) {
       .then(stream => {
         //save my stream
         myStream = stream;
+        h.addAudio(myStream);
         //provide access to window for debug
         var mixstream = new MediaStream();
         window.myStream = myStream;
@@ -544,6 +566,7 @@ function init(createOffer, partnerName) {
     let str = e.streams[0];
     var el = document.getElementById(`${partnerName}-video`);
     if (el) {
+      h.addAudio(str);
       el.srcObject = str;
     } else {
       h.addVideo(partnerName, str);
